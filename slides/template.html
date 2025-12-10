@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinema Ratings Analysis</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap');
+
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --secondary-accent: #818cf8;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --slide-padding: 4rem;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--gradient);
+            color: var(--text-color);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .slide {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem var(--slide-padding);
+            box-sizing: border-box;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        h1,
+        h2 {
+            margin: 0 0 1rem 0;
+            line-height: 1.1;
+        }
+
+        h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(to right, var(--accent-color), var(--secondary-accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        h2 {
+            font-size: 3rem;
+            color: var(--text-color);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-color);
+        }
+
+        .card h3 {
+            color: var(--secondary-accent);
+            font-size: 1.5rem;
+            margin-top: 0;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .list-group {
+            list-style: none;
+            padding: 0;
+        }
+
+        .list-group li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .list-group li:last-child {
+            border-bottom: none;
+        }
+
+        .highlight {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* Recommendations */
+        .poster-container {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .movie-card {
+            width: 200px;
+            text-align: center;
+        }
+
+        .movie-poster {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s;
+        }
+
+        .movie-poster:hover {
+            transform: scale(1.05);
+        }
+
+        .movie-title {
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+
+        .big-stat {
+            font-size: 8rem;
+            font-weight: 900;
+            color: var(--accent-color);
+            line-height: 1;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .rec-slide {
+            display: flex;
+            flex-direction: row;
+            gap: 4rem;
+            align-items: center;
+            max-width: 1200px;
+        }
+
+        .rec-image {
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .rec-content {
+            flex: 2;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Intro Slide -->
+    <div class="slide">
+        <h1>Your Cinema Profile</h1>
+        <p style="font-size: 1.5rem; opacity: 0.8;">A Data-Driven Deconstruction of Your Taste</p>
+    </div>
+
+    <!-- Runtime Stats -->
+    <div class="slide">
+        <h2>Time Investment</h2>
+        <div class="stats-grid">
+            <div class="card" style="text-align: center;">
+                <div class="big-stat">{{ total_days_watched|int }}</div>
+                <div class="stat-label">Total Days Watched</div>
+            </div>
+            <div class="card" style="text-align: center;">
+                <div class="big-stat">{{ avg_runtime_minutes|int }}</div>
+                <div class="stat-label">Average Movie Runtime</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Genres -->
+    <div class="slide">
+        <h2>Genre Breakdown</h2>
+        <div class="stats-grid">
+            <div class="card">
+                <h3>Most Watched</h3>
+                <ul class="list-group">{% for genre in most_watched_genres %}
+                    <li>
+                        <span>{{ genre.name }}</span>
+                        <!-- Showing Count and Avg Rating -->
+                        <span class="highlight">{{ genre.count }} movies <span style="font-size:0.8em; opacity:0.7;">(★
+                                {{ "%.1f"|format(genre.avg_rating) }})</span></span>
+                    </li>{% endfor %}
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Top Favorites (Approval)</h3>
+                <ul class="list-group">{% for genre in favorite_genres %}
+                    <li>
+                        <span>{{ genre.name }}</span>
+                        <span class="highlight">{{ genre.approval_rate|round|int }}% <span
+                                style="font-size:0.8em; opacity:0.7;">({{ genre.count }} movies)</span></span>
+                    </li>{% endfor %}
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Least Favorites</h3>
+                <ul class="list-group">{% for genre in least_favorite_genres %}
+                    <li>
+                        <span>{{ genre.name }}</span>
+                        <span class="highlight">{{ genre.approval_rate|round|int }}% <span
+                                style="font-size:0.8em; opacity:0.7;">({{ genre.count }} movies)</span></span>
+                    </li>{% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- People -->
+    <div class="slide">
+        <h2>Directors & Actors</h2>
+        <div class="stats-grid">
+            <div class="card">
+                <h3>Favorite Directors</h3>
+                <ul class="list-group">{% for director in favorite_directors %}
+                    <li style="flex-direction: column; align-items: flex-start;">
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span>{{ director.name }}</span>
+                            <span class="highlight">{{ director.approval_rate|round|int }}% ({{ director.count
+                                }})</span>
+                        </div>
+                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
+                            Top movies: {% for movie in director.movies[:3] %}{{ movie }}{% if not loop.last %}, {%
+                            endif %}{% endfor %}
+                        </div>
+                    </li>{% endfor %}
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Favorite Actors</h3>
+                <ul class="list-group">{% for actor in favorite_actors %}
+                    <li style="flex-direction: column; align-items: flex-start;">
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span>{{ actor.name }}</span>
+                            <span class="highlight">{{ actor.approval_rate|round|int }}% ({{ actor.count }})</span>
+                        </div>
+                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
+                            Top movies: {% for movie in actor.movies[:3] %}{{ movie }}{% if not loop.last %}, {% endif
+                            %}{% endfor %}
+                        </div>
+                    </li>{% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
