@@ -6,7 +6,11 @@ import os
 import shutil
 from bs4 import BeautifulSoup
 
-RATINGS_FILE = '/Users/aureliomerenda/Dev/_am/cinema-ratings/ratings.csv'
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+RATINGS_FILE = os.path.join(DATA_DIR, 'ratings-plus.csv')
+SOURCE_FILE = os.path.join(DATA_DIR, 'ratings.csv')
 TEMP_FILE = RATINGS_FILE + '.tmp'
 
 HEADERS = {
@@ -14,9 +18,61 @@ HEADERS = {
     'Accept-Language': 'en-US,en;q=0.9'
 }
 
-def get_main_actors(url):
+
+def get_main_actors(soup):
     """
-    Fetches the IMDb page and extracts main actors.
+    Extracts 'Stars' from the soup.
+    """
+    stars = []
+    label_span = soup.find('span', string='Stars')
+    if not label_span:
+         label_span = soup.find('a', string='Stars')
+         
+    if label_span:
+         parent = label_span.find_parent('li')
+         if parent:
+             links = parent.find_all('a', class_='ipc-metadata-list-item__list-content-item')
+             stars = [a.text.strip() for a in links]
+    
+    if not stars:
+         cast_items = soup.select('div[data-testid="title-cast-item"] a[data-testid="title-cast-item__actor"]')
+         stars = [a.text.strip() for a in cast_items[:3]]
+         
+    return ", ".join(stars)
+
+
+def get_countries(soup):
+    """
+    Extracts 'Country of origin' from the soup.
+    """
+    countries = []
+    # Search for the label "Country of origin" or "Countries of origin"
+    # IMDb usually uses a specific data-testid or label
+    
+    # Try finding the label span
+    label_span = soup.find('span', string='Country of origin')
+    if not label_span:
+         label_span = soup.find('a', string='Country of origin')
+    if not label_span:
+         label_span = soup.find('span', string='Countries of origin')
+
+    if label_span:
+         # usually in a list item, we want the links following it
+         parent = label_span.find_parent('li')
+         if parent:
+             links = parent.find_all('a', class_='ipc-metadata-list-item__list-content-item')
+             countries = [a.text.strip() for a in links]
+
+    if not countries:
+         # Fallback: Try looking for a specific testid if known, or loose search
+         # For now, let's rely on the label search which is fairly standard on IMDb
+         pass
+         
+    return ", ".join(countries)
+
+def get_metadata(url):
+    """
+    Fetches the IMDb page and extracts metadata (actors, countries).
     """
     print(f"Fetching {url}...")
     try:
@@ -25,54 +81,30 @@ def get_main_actors(url):
         
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # Strategy 1: Look for "Top Cast" section or similar.
-        # IMDb structure varies, but often actors are linked with specific classes or roles.
-        # Common pattern: check for specific IPC data attributes or list items.
-        
-        # Strategy 2: Look for the specific "Stars" section in the metadata block
-        # Usually found near Director/Writers
-        
-        # Let's try a robust selector for the "Stars" or "Cast" section.
-        # This selector targets the list of credits where "Stars" is usually listed.
-        
-        # New IMDb design often uses __NEXT_DATA__ json, but we try HTML parsing first.
-        # Targeting the links inside the presentation list item for "Stars"
-        
-        # Attempt to find the "Stars" label and get siblings
-        stars = []
-        
-        # Try finding specific data-testid which IMDb often uses now
-        # "title-cast-item" is sometimes used for the full cast list, but we want the summary "Stars"
-        
-        # Search for the label "Stars"
-        label_span = soup.find('span', string='Stars')
-        if not label_span:
-             label_span = soup.find('a', string='Stars')
+        # Actors
+        actors = get_main_actors(soup)
              
-        if label_span:
-             # usually in a list item, we want the links following it
-             parent = label_span.find_parent('li')
-             if parent:
-                 links = parent.find_all('a', class_='ipc-metadata-list-item__list-content-item')
-                 stars = [a.text.strip() for a in links]
-        
-        if not stars:
-             # Fallback: Try "Top Cast" section if "Stars" summary missing
-             # This is harder to scrape reliably without rendering JS sometimes, but let's try
-             # to find cast items.
-             cast_items = soup.select('div[data-testid="title-cast-item"] a[data-testid="title-cast-item__actor"]')
-             stars = [a.text.strip() for a in cast_items[:3]] # Take top 3
+        # Countries
+        countries = get_countries(soup)
              
-        return ", ".join(stars)
+        return {
+            "Main Actors": actors,
+            "Countries": countries
+        }
         
     except Exception as e:
         print(f"Error fetching {url}: {e}")
-        return ""
+        return None
 
 def main():
+
     if not os.path.exists(RATINGS_FILE):
-        print(f"File not found: {RATINGS_FILE}")
-        return
+        if os.path.exists(SOURCE_FILE):
+            print(f"{RATINGS_FILE} not found. Copying from {SOURCE_FILE}...")
+            shutil.copy(SOURCE_FILE, RATINGS_FILE)
+        else:
+            print(f"File not found: {RATINGS_FILE} and source {SOURCE_FILE} is missing too.")
+            return
 
     # Check headers to see if we need to add the new column
     with open(RATINGS_FILE, 'r', encoding='utf-8') as f:
@@ -80,57 +112,69 @@ def main():
         header = next(reader)
         rows = list(reader)
 
+    headers_changed = False
     if "Main Actors" not in header:
         print("Adding 'Main Actors' column...")
         header.append("Main Actors")
-        # Add empty value to all existing rows for consistency before processing
+        headers_changed = True
+        
+    if "Countries" not in header:
+        print("Adding 'Countries' column...")
+        header.append("Countries")
+        headers_changed = True
+
+    if headers_changed:
+        # Add empty value to all existing rows for newly added columns
+        # We need to be careful to match the index
         for row in rows:
-            row.append("")
+            while len(row) < len(header):
+                row.append("")
     
     actor_col_index = header.index("Main Actors")
+    country_col_index = header.index("Countries")
     url_col_index = header.index("URL")
     
     processed_count = 0
     updated_rows = []
     
-    # Write to temp file as we go, or write all at end?
-    # Writing all at end is safer for atomic switch, but we want to be able to stop and resume.
-    # Let's process 'rows' in memory and write to temp file incrementally if we wanted, 
-    # but for simplicity, let's process and then save. 
-    # Actually, the user said "movie-by-movie, no hurry". 
-    # To support resuming, we should check if the field is empty.
-    
     try:
         updated_rows.append(header)
         for row in rows:
-            # Ensure row has enough columns (handle malformed rows if any, though csv module handles this mostly)
+            # Ensure row has enough columns
             while len(row) < len(header):
                 row.append("")
                 
             current_actors = row[actor_col_index]
+            current_countries = row[country_col_index]
             url = row[url_col_index]
             
-            if not current_actors and url:
-                actors = get_main_actors(url)
-                if actors:
-                    print(f"Found actors: {actors}")
-                    row[actor_col_index] = actors
+            # We want to fetch if EITHER is missing, but efficient to do one request
+            if (not current_actors or not current_countries) and url:
+                metadata = get_metadata(url)
+                if metadata:
+                    if not current_actors:
+                         row[actor_col_index] = metadata["Main Actors"]
+                         print(f"Found actors: {metadata['Main Actors']}")
+                    if not current_countries:
+                         row[country_col_index] = metadata["Countries"]
+                         print(f"Found countries: {metadata['Countries']}")
+                    
                     processed_count += 1
                     # Polite delay
                     sleep_time = random.uniform(2, 5)
                     print(f"Sleeping for {sleep_time:.2f}s...")
                     time.sleep(sleep_time)
                 else:
-                    print(f"Could not find actors for {url}")
+                    print(f"Could not find metadata for {url}")
             
-            updated_rows.append(row)
+            # updated_rows.append(row) # No longer needed
             
             # Save progress every 5 updates to avoid losing too much if stopped
             if processed_count > 0 and processed_count % 5 == 0:
                  print("Saving progress...")
                  with open(TEMP_FILE, 'w', encoding='utf-8', newline='') as f_out:
                     writer = csv.writer(f_out)
-                    writer.writerows(updated_rows + rows[len(updated_rows)-1:]) # Write current progress + remaining unprocessed
+                    writer.writerows([header] + rows) 
                  shutil.copy(TEMP_FILE, RATINGS_FILE)
 
     except KeyboardInterrupt:
@@ -140,7 +184,7 @@ def main():
         print("Saving final changes...")
         with open(TEMP_FILE, 'w', encoding='utf-8', newline='') as f_out:
             writer = csv.writer(f_out)
-            writer.writerows(updated_rows)
+            writer.writerows([header] + rows)
         shutil.move(TEMP_FILE, RATINGS_FILE)
         print("Done.")
 
