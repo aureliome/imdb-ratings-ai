@@ -1,6 +1,7 @@
 import json
 import os
 from jinja2 import Environment, FileSystemLoader
+from playwright.sync_api import sync_playwright
 
 def load_stats(stats_path):
     with open(stats_path, 'r', encoding='utf-8') as f:
@@ -40,7 +41,12 @@ def generate_slides(stats_path, template_dir, template_file, output_path):
         'favorite_genres': favorite_genres,
         'least_favorite_genres': least_favorite_genres,
         'favorite_directors': favorite_directors,
-        'favorite_actors': favorite_actors
+        'favorite_actors': favorite_actors,
+        'total_movies': stats.get('total_movies', 0),
+        'global_avg_rating': stats.get('global_avg_rating', 0),
+        'global_avg_rating': stats.get('global_avg_rating', 0),
+        'decades_data': stats.get('decades_data', []),
+        'votes_data': stats.get('votes_data', [])
     }
     
     env = Environment(loader=FileSystemLoader(template_dir))
@@ -49,6 +55,25 @@ def generate_slides(stats_path, template_dir, template_file, output_path):
     
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(rendered_html)
+        
+    # Generate PDF
+    pdf_path = output_path.replace('.html', '.pdf')
+    print(f"Generating PDF at {pdf_path}...")
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        # 1920x1080 to match our print styles
+        page = browser.new_page(viewport={'width': 1920, 'height': 1080})
+        
+        # Convert path to file URL
+        file_url = f"file://{output_path}"
+        page.goto(file_url, wait_until="networkidle")
+        
+        # Wait for Chart.js animations to complete
+        page.wait_for_timeout(2000)
+        
+        page.pdf(path=pdf_path, width="1920px", height="1080px", print_background=True)
+        browser.close()
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

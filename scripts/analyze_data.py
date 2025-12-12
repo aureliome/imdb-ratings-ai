@@ -79,18 +79,24 @@ def main():
     data_file = os.path.join(base_dir, 'data', 'ratings-plus.csv')
     movies = load_data(data_file)
     
-    # 1. Total Runtime
+    # 1. Total Runtime & Count
+    total_movies = len(movies)
     total_minutes = sum(m['Runtime (mins)'] for m in movies)
     total_days = total_minutes / (60 * 24)
     
-    # 2. Avg Runtime (All Movies)
+    # 2. Avg Runtime & Global Avg Rating
     if movies:
         avg_runtime_minutes = statistics.mean([m['Runtime (mins)'] for m in movies])
+        global_avg_rating = statistics.mean([m['Your Rating'] for m in movies])
     else:
         avg_runtime_minutes = 0
+        global_avg_rating = 0
         
     # 3. Analyze Categories
-    genres_stats = process_category(movies, get_genres, min_count=3)
+    # Filter for genres: must be >= 10% of total movies
+    min_genre_count = max(1, int(total_movies * 0.1))
+    genres_stats = process_category(movies, get_genres, min_count=min_genre_count)
+    
     directors_stats = process_category(movies, get_directors, min_count=2) # Directors might be fewer per movie
     actors_stats = process_category(movies, get_actors, min_count=3)
     
@@ -105,7 +111,62 @@ def main():
     # Most watched genres
     most_watched_genres = sorted(genres_stats, key=lambda x: x['count'], reverse=True)
 
+    # 4. Decade Stats (formerly Year Stats)
+    decades_data = {}
+    for m in movies:
+        y = m['Year']
+        try:
+            year_val = int(y)
+            decade = (year_val // 10) * 10
+            decade_label = f"{decade}s"
+        except ValueError:
+            continue # Skip invalid years
+
+        if decade_label not in decades_data:
+            decades_data[decade_label] = {'count': 0, 'sum_rating': 0}
+        decades_data[decade_label]['count'] += 1
+        decades_data[decade_label]['sum_rating'] += m['Your Rating']
+        
+    decades_list = []
+    # Sort by decade
+    for d in sorted(decades_data.keys()):
+        count = decades_data[d]['count']
+        avg = decades_data[d]['sum_rating'] / count
+        decades_list.append({
+            'decade': d,
+            'count': count,
+            'avg_rating': avg
+        })
+        
+    # 5. Vote Distribution
+    # Initialize 1-10
+    votes_dist = {i: {'my_count': 0, 'imdb_count': 0} for i in range(1, 11)}
+    
+    for m in movies:
+        # My Rating
+        my_r = int(m['Your Rating'])
+        if 1 <= my_r <= 10:
+            votes_dist[my_r]['my_count'] += 1
+            
+        # IMDb Rating (floor)
+        try:
+            imdb_r = int(float(m['IMDb Rating']))
+            if 1 <= imdb_r <= 10:
+                votes_dist[imdb_r]['imdb_count'] += 1
+        except (ValueError, TypeError):
+            pass
+            
+    votes_list = []
+    for v in range(1, 11):
+        votes_list.append({
+            'vote': v,
+            'my_count': votes_dist[v]['my_count'],
+            'imdb_count': votes_dist[v]['imdb_count']
+        })
+
     output = {
+        'total_movies': total_movies,
+        'global_avg_rating': global_avg_rating,
         'total_days_watched': total_days,
         'avg_runtime_minutes': avg_runtime_minutes,
         'favorites': {
@@ -116,7 +177,9 @@ def main():
         'least_favorites': {
             'genres': genres_sorted[-5:]
         },
-        'most_watched_genres': most_watched_genres[:5]
+        'most_watched_genres': most_watched_genres[:5],
+        'decades_data': decades_list,
+        'votes_data': votes_list
     }
     
     with open('stats.json', 'w', encoding='utf-8') as f:

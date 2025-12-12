@@ -5,23 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cinema Ratings Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&family=Bebas+Neue&display=swap');
 
         :root {
-            --bg-color: #0f172a;
-            --text-color: #f8fafc;
-            --accent-color: #38bdf8;
-            --secondary-accent: #818cf8;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --bg-gradient: linear-gradient(135deg, #2d1b4e 0%, #1c1c3c 50%, #0d0d26 100%);
+            --text-color: #ffffff;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --accent-pink: #ff2a6d;
+            --accent-cyan: #05d9e8;
+            --accent-yellow: #f9bf1e;
+            --accent-purple: #d93ef8;
             --slide-padding: 4rem;
         }
 
         body {
             margin: 0;
             font-family: 'Outfit', sans-serif;
-            background: var(--gradient);
+            background: var(--bg-gradient);
+            background-attachment: fixed;
             color: var(--text-color);
             overflow-x: hidden;
             scroll-behavior: smooth;
@@ -40,32 +45,36 @@
         }
 
         h1,
-        h2 {
-            margin: 0 0 1rem 0;
-            line-height: 1.1;
+        h2,
+        h3 {
+            margin: 0;
+            text-transform: uppercase;
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 2px;
         }
 
         h1 {
-            font-size: 5rem;
-            font-weight: 900;
-            background: linear-gradient(to right, var(--accent-color), var(--secondary-accent));
+            font-size: 6rem;
+            background: linear-gradient(45deg, var(--accent-pink), var(--accent-yellow));
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-align: center;
+            text-shadow: 0 0 30px rgba(255, 42, 109, 0.5);
+            margin-bottom: 0.5rem;
             animation: fadeInDown 1s ease-out;
+            line-height: 1;
         }
 
         h2 {
-            font-size: 3rem;
+            font-size: 3.5rem;
             color: var(--text-color);
             margin-bottom: 2rem;
-            text-align: center;
+            text-shadow: 0 0 10px rgba(5, 217, 232, 0.5);
         }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 2rem;
             width: 100%;
             max-width: 1200px;
@@ -74,35 +83,41 @@
         .card {
             background: var(--card-bg);
             padding: 2rem;
-            border-radius: 1rem;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 1.5rem;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
         }
 
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border-color: var(--accent-color);
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-cyan);
         }
 
         .card h3 {
-            color: var(--secondary-accent);
-            font-size: 1.5rem;
-            margin-top: 0;
+            color: var(--accent-cyan);
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(5, 217, 232, 0.4);
         }
 
         .stat-value {
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: 700;
+            color: var(--accent-yellow);
             margin: 0.5rem 0;
+            text-shadow: 0 0 15px rgba(249, 191, 30, 0.4);
         }
 
         .stat-label {
             font-size: 1rem;
-            opacity: 0.8;
+            opacity: 0.9;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-weight: 300;
         }
 
         .list-group {
@@ -111,10 +126,20 @@
         }
 
         .list-group li {
-            padding: 0.5rem 0;
+            padding: 0.8rem 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .list-group li:hover {
+            background: rgba(255, 255, 255, 0.05);
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            border-radius: 0.5rem;
+            margin: 0 -0.5rem;
         }
 
         .list-group li:last-child {
@@ -122,75 +147,57 @@
         }
 
         .highlight {
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-
-        /* Recommendations */
-        .poster-container {
-            display: flex;
-            gap: 2rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 2rem;
-        }
-
-        .movie-card {
-            width: 200px;
-            text-align: center;
-        }
-
-        .movie-poster {
-            width: 100%;
-            border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s;
-        }
-
-        .movie-poster:hover {
-            transform: scale(1.05);
-        }
-
-        .movie-title {
-            margin-top: 1rem;
+            color: var(--accent-pink);
             font-weight: bold;
         }
 
         .big-stat {
             font-size: 8rem;
             font-weight: 900;
-            color: var(--accent-color);
+            background: linear-gradient(to top, var(--accent-purple), var(--accent-cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
             line-height: 1;
+            margin-bottom: 1rem;
         }
 
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
+        /* Chart Overrides */
+        canvas {
+            filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.2));
+        }
+    </style>
+    <style>
+        @media print {
+            @page {
+                size: 1920px 1080px;
+                margin: 0;
             }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            body {
+                background: var(--bg-gradient) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
-        }
 
-        .rec-slide {
-            display: flex;
-            flex-direction: row;
-            gap: 4rem;
-            align-items: center;
-            max-width: 1200px;
-        }
+            .slide {
+                page-break-after: always;
+                break-after: page;
+                height: 1080px;
+                /* Fixed height for PDF */
+                min-height: 1080px;
+                width: 1920px;
+                /* Fixed width for PDF */
+                padding: 4rem;
+                /* Reset padding if needed */
+            }
 
-        .rec-image {
-            flex: 1;
-            max-width: 300px;
-        }
-
-        .rec-content {
-            flex: 2;
-            text-align: left;
+            .animate__animated {
+                animation: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                transition: none !important;
+            }
         }
     </style>
 </head>
@@ -198,29 +205,59 @@
 <body>
 
     <!-- Intro Slide -->
-    <div class="slide">
-        <h1>Your Cinema Profile</h1>
-        <p style="font-size: 1.5rem; opacity: 0.8;">A Data-Driven Deconstruction of Your Taste</p>
+    <div class="slide animate__animated animate__fadeIn">
+        <h1 class="animate__animated animate__zoomInDown">Your Cinema Profile</h1>
+        <p style="font-size: 1.8rem; font-weight: 300; opacity: 0.9; letter-spacing: 1px;"
+            class="animate__animated animate__fadeInUp animate__delay-1s">A Data-Driven Deconstruction of Your Taste</p>
     </div>
 
     <!-- Runtime Stats -->
     <div class="slide">
-        <h2>Time Investment</h2>
-        <div class="stats-grid">
-            <div class="card" style="text-align: center;">
+        <h2>Stats</h2>
+        <div class="stats-grid" style="grid-template-columns: 1fr 1fr; max-width: 800px;">
+            <div class="card animate__animated animate__fadeInLeft" style="text-align: center;">
+                <div class="big-stat">778</div>
+                <div class="stat-label">Movies Watched</div>
+            </div>
+            <div class="card animate__animated animate__fadeInRight animate__delay-1s" style="text-align: center;">
+                <div class="big-stat">6.4</div>
+                <div class="stat-label">Average Vote</div>
+            </div>
+            <div class="card animate__animated animate__fadeInLeft animate__delay-2s" style="text-align: center;">
                 <div class="big-stat">63</div>
-                <div class="stat-label">Total Days Watched</div>
+                <div class="stat-label">Time spent to watch movies<br />(in days)</div>
             </div>
-            <div class="card" style="text-align: center;">
+            <div class="card animate__animated animate__fadeInRight animate__delay-3s" style="text-align: center;">
                 <div class="big-stat">117</div>
-                <div class="stat-label">Average Movie Runtime</div>
+                <div class="stat-label">Average Movie Runtime<br />(in minutes)</div>
             </div>
+        </div>
+    </div>
+
+    <!-- Years Histogram -->
+    <div class="slide">
+        <h2>Movies by Year</h2>
+        <div style="width: 100%; max-width: 1000px; height: 500px;" class="card">
+            <canvas id="yearsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Votes Histogram -->
+    <div class="slide">
+        <h2>Vote Distribution</h2>
+        <div style="width: 100%; max-width: 1000px; height: 500px;" class="card">
+            <canvas id="votesChart"></canvas>
         </div>
     </div>
 
     <!-- Genres -->
     <div class="slide">
         <h2>Genre Breakdown</h2>
+        <p style="text-align: center; max-width: 800px; margin-bottom: 2rem; opacity: 0.8; font-size: 1.1rem;">
+            Top and least favorites are sorted by <strong style="color: var(--accent-yellow)">approval rate</strong>
+            (percentage of movies rated 7/10 or higher).<br />
+            Genres with less than 10% of total movies watched have been excluded.
+        </p>
         <div class="stats-grid">
             <div class="card">
                 <h3>Most Watched</h3>
@@ -228,62 +265,67 @@
                     <li>
                         <span>Drammatico</span>
                         <!-- Showing Count and Avg Rating -->
-                        <span class="highlight">532 movies <span style="font-size:0.8em; opacity:0.7;">(★
+                        <span><span class="highlight">532</span> movies <span
+                                style="font-size:0.8em; opacity:0.7;">(★
                                 6.4)</span></span>
                     </li>
                     <li>
                         <span>Thriller</span>
                         <!-- Showing Count and Avg Rating -->
-                        <span class="highlight">284 movies <span style="font-size:0.8em; opacity:0.7;">(★
+                        <span><span class="highlight">284</span> movies <span
+                                style="font-size:0.8em; opacity:0.7;">(★
                                 6.3)</span></span>
                     </li>
                     <li>
                         <span>Commedia</span>
                         <!-- Showing Count and Avg Rating -->
-                        <span class="highlight">264 movies <span style="font-size:0.8em; opacity:0.7;">(★
+                        <span><span class="highlight">264</span> movies <span
+                                style="font-size:0.8em; opacity:0.7;">(★
                                 6.2)</span></span>
                     </li>
                     <li>
                         <span>Poliziesco</span>
                         <!-- Showing Count and Avg Rating -->
-                        <span class="highlight">217 movies <span style="font-size:0.8em; opacity:0.7;">(★
+                        <span><span class="highlight">217</span> movies <span
+                                style="font-size:0.8em; opacity:0.7;">(★
                                 6.4)</span></span>
                     </li>
                     <li>
                         <span>Azione</span>
                         <!-- Showing Count and Avg Rating -->
-                        <span class="highlight">169 movies <span style="font-size:0.8em; opacity:0.7;">(★
+                        <span><span class="highlight">169</span> movies <span
+                                style="font-size:0.8em; opacity:0.7;">(★
                                 6.2)</span></span>
                     </li>
                 </ul>
             </div>
             <div class="card">
-                <h3>Top Favorites (Approval)</h3>
+                <h3>Top Favorites</h3>
                 <ul class="list-group">
                     <li>
-                        <span>Western</span>
-                        <span class="highlight">80% <span
-                                style="font-size:0.8em; opacity:0.7;">(10 movies)</span></span>
+                        <span>Drammatico</span>
+                        <span><span style="color: var(--accent-yellow)">50%</span>
+                            <span style="font-size:0.8em; opacity:0.7;">(★ 6.4)</span></span>
                     </li>
                     <li>
-                        <span>Guerra</span>
-                        <span class="highlight">76% <span
-                                style="font-size:0.8em; opacity:0.7;">(33 movies)</span></span>
+                        <span>Sentimentale</span>
+                        <span><span style="color: var(--accent-yellow)">48%</span>
+                            <span style="font-size:0.8em; opacity:0.7;">(★ 6.4)</span></span>
                     </li>
                     <li>
-                        <span>Musical</span>
-                        <span class="highlight">58% <span
-                                style="font-size:0.8em; opacity:0.7;">(33 movies)</span></span>
+                        <span>Poliziesco</span>
+                        <span><span style="color: var(--accent-yellow)">47%</span>
+                            <span style="font-size:0.8em; opacity:0.7;">(★ 6.4)</span></span>
                     </li>
                     <li>
-                        <span>Noir</span>
-                        <span class="highlight">50% <span
-                                style="font-size:0.8em; opacity:0.7;">(6 movies)</span></span>
+                        <span>Avventura</span>
+                        <span><span style="color: var(--accent-yellow)">45%</span>
+                            <span style="font-size:0.8em; opacity:0.7;">(★ 6.3)</span></span>
                     </li>
                     <li>
-                        <span>Storico</span>
-                        <span class="highlight">50% <span
-                                style="font-size:0.8em; opacity:0.7;">(44 movies)</span></span>
+                        <span>Biografico</span>
+                        <span><span style="color: var(--accent-yellow)">45%</span>
+                            <span style="font-size:0.8em; opacity:0.7;">(★ 6.4)</span></span>
                     </li>
                 </ul>
             </div>
@@ -291,29 +333,29 @@
                 <h3>Least Favorites</h3>
                 <ul class="list-group">
                     <li>
-                        <span>Horror</span>
-                        <span class="highlight">24% <span
-                                style="font-size:0.8em; opacity:0.7;">(29 movies)</span></span>
-                    </li>
-                    <li>
-                        <span>Animazione</span>
-                        <span class="highlight">31% <span
-                                style="font-size:0.8em; opacity:0.7;">(16 movies)</span></span>
-                    </li>
-                    <li>
-                        <span>Documentario</span>
-                        <span class="highlight">33% <span
-                                style="font-size:0.8em; opacity:0.7;">(9 movies)</span></span>
-                    </li>
-                    <li>
-                        <span>Fantastico</span>
-                        <span class="highlight">34% <span
-                                style="font-size:0.8em; opacity:0.7;">(67 movies)</span></span>
-                    </li>
-                    <li>
                         <span>Commedia</span>
-                        <span class="highlight">37% <span
-                                style="font-size:0.8em; opacity:0.7;">(264 movies)</span></span>
+                        <span><span style="color: var(--accent-yellow)">37%</span>
+                            <span style="font-size:0.8em; opacity:0.7;">(★ 6.2)</span></span>
+                    </li>
+                    <li>
+                        <span>Fantascienza</span>
+                        <span><span style="color: var(--accent-yellow)">39%</span>
+                            <span style="font-size:0.8em; opacity:0.7;">(★ 6.3)</span></span>
+                    </li>
+                    <li>
+                        <span>Azione</span>
+                        <span><span style="color: var(--accent-yellow)">40%</span>
+                            <span style="font-size:0.8em; opacity:0.7;">(★ 6.2)</span></span>
+                    </li>
+                    <li>
+                        <span>Thriller</span>
+                        <span><span style="color: var(--accent-yellow)">44%</span>
+                            <span style="font-size:0.8em; opacity:0.7;">(★ 6.3)</span></span>
+                    </li>
+                    <li>
+                        <span>Giallo</span>
+                        <span><span style="color: var(--accent-yellow)">44%</span>
+                            <span style="font-size:0.8em; opacity:0.7;">(★ 6.4)</span></span>
                     </li>
                 </ul>
             </div>
@@ -329,47 +371,47 @@
                 <ul class="list-group">
                     <li style="flex-direction: column; align-items: flex-start;">
                         <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>Charles Chaplin</span>
-                            <span class="highlight">100% (2)</span>
+                            <span style="font-weight: bold;">Charles Chaplin</span>
+                            <span class="highlight">★ 8.5</span>
                         </div>
-                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
-                            Top movies: City Lights, Modern Times
-                        </div>
-                    </li>
-                    <li style="flex-direction: column; align-items: flex-start;">
-                        <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>Pete Docter</span>
-                            <span class="highlight">100% (3)</span>
-                        </div>
-                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
-                            Top movies: Inside Out, Soul, Up
+                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 0.4rem;">
+                            2 movies, including <em style="color: var(--accent-cyan)">City Lights</em> and <em style="color: var(--accent-cyan)">Modern Times</em>
                         </div>
                     </li>
                     <li style="flex-direction: column; align-items: flex-start;">
                         <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>Brian De Palma</span>
-                            <span class="highlight">100% (3)</span>
+                            <span style="font-weight: bold;">Pete Docter</span>
+                            <span class="highlight">★ 8.0</span>
                         </div>
-                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
-                            Top movies: Blow Out, Carlito's Way, The Untouchables
-                        </div>
-                    </li>
-                    <li style="flex-direction: column; align-items: flex-start;">
-                        <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>Stanley Donen</span>
-                            <span class="highlight">100% (2)</span>
-                        </div>
-                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
-                            Top movies: Charade, Singin' in the Rain
+                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 0.4rem;">
+                            3 movies, including <em style="color: var(--accent-cyan)">Inside Out</em> and <em style="color: var(--accent-cyan)">Soul</em>
                         </div>
                     </li>
                     <li style="flex-direction: column; align-items: flex-start;">
                         <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>Stanley Kubrick</span>
-                            <span class="highlight">100% (6)</span>
+                            <span style="font-weight: bold;">Brian De Palma</span>
+                            <span class="highlight">★ 8.0</span>
                         </div>
-                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
-                            Top movies: Eyes Wide Shut, 2001: A Space Odyssey, Paths of Glory
+                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 0.4rem;">
+                            3 movies, including <em style="color: var(--accent-cyan)">Blow Out</em> and <em style="color: var(--accent-cyan)">Carlito's Way</em>
+                        </div>
+                    </li>
+                    <li style="flex-direction: column; align-items: flex-start;">
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span style="font-weight: bold;">Stanley Donen</span>
+                            <span class="highlight">★ 8.0</span>
+                        </div>
+                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 0.4rem;">
+                            2 movies, including <em style="color: var(--accent-cyan)">Charade</em> and <em style="color: var(--accent-cyan)">Singin' in the Rain</em>
+                        </div>
+                    </li>
+                    <li style="flex-direction: column; align-items: flex-start;">
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span style="font-weight: bold;">Stanley Kubrick</span>
+                            <span class="highlight">★ 7.8</span>
+                        </div>
+                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 0.4rem;">
+                            6 movies, including <em style="color: var(--accent-cyan)">Eyes Wide Shut</em> and <em style="color: var(--accent-cyan)">2001: A Space Odyssey</em>
                         </div>
                     </li>
                 </ul>
@@ -379,47 +421,47 @@
                 <ul class="list-group">
                     <li style="flex-direction: column; align-items: flex-start;">
                         <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>Faye Dunaway</span>
-                            <span class="highlight">100% (3)</span>
+                            <span style="font-weight: bold;">Faye Dunaway</span>
+                            <span class="highlight">★ 8.0</span>
                         </div>
-                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
-                            Top movies: Chinatown, Three Days of the Condor, Bonnie and Clyde
-                        </div>
-                    </li>
-                    <li style="flex-direction: column; align-items: flex-start;">
-                        <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>Carrie Fisher</span>
-                            <span class="highlight">100% (3)</span>
-                        </div>
-                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
-                            Top movies: Star Wars, Star Wars: Episode VI - Return of the Jedi, Star Wars: Episode V - The Empire Strikes Back
+                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 0.4rem;">
+                            3 movies, including <em style="color: var(--accent-cyan)">Chinatown</em> and <em style="color: var(--accent-cyan)">Three Days of the Condor</em>
                         </div>
                     </li>
                     <li style="flex-direction: column; align-items: flex-start;">
                         <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>Orson Welles</span>
-                            <span class="highlight">100% (3)</span>
+                            <span style="font-weight: bold;">Carrie Fisher</span>
+                            <span class="highlight">★ 7.7</span>
                         </div>
-                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
-                            Top movies: Citizen Kane, Touch of Evil, The Lady from Shanghai
-                        </div>
-                    </li>
-                    <li style="flex-direction: column; align-items: flex-start;">
-                        <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>Timothée Chalamet</span>
-                            <span class="highlight">100% (3)</span>
-                        </div>
-                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
-                            Top movies: Dune: Part Two, Dune: Part One, Call Me by Your Name
+                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 0.4rem;">
+                            3 movies, including <em style="color: var(--accent-cyan)">Star Wars</em> and <em style="color: var(--accent-cyan)">Star Wars: Episode VI - Return of the Jedi</em>
                         </div>
                     </li>
                     <li style="flex-direction: column; align-items: flex-start;">
                         <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>Chris Pratt</span>
-                            <span class="highlight">100% (3)</span>
+                            <span style="font-weight: bold;">Orson Welles</span>
+                            <span class="highlight">★ 7.7</span>
                         </div>
-                        <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.2rem;">
-                            Top movies: Guardians of the Galaxy Vol. 3, Guardians of the Galaxy Vol. 2, Guardians of the Galaxy
+                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 0.4rem;">
+                            3 movies, including <em style="color: var(--accent-cyan)">Citizen Kane</em> and <em style="color: var(--accent-cyan)">Touch of Evil</em>
+                        </div>
+                    </li>
+                    <li style="flex-direction: column; align-items: flex-start;">
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span style="font-weight: bold;">Timothée Chalamet</span>
+                            <span class="highlight">★ 7.3</span>
+                        </div>
+                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 0.4rem;">
+                            3 movies, including <em style="color: var(--accent-cyan)">Dune: Part Two</em> and <em style="color: var(--accent-cyan)">Dune: Part One</em>
+                        </div>
+                    </li>
+                    <li style="flex-direction: column; align-items: flex-start;">
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span style="font-weight: bold;">Chris Pratt</span>
+                            <span class="highlight">★ 7.3</span>
+                        </div>
+                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 0.4rem;">
+                            3 movies, including <em style="color: var(--accent-cyan)">Guardians of the Galaxy Vol. 3</em> and <em style="color: var(--accent-cyan)">Guardians of the Galaxy Vol. 2</em>
                         </div>
                     </li>
                 </ul>
@@ -427,6 +469,189 @@
         </div>
     </div>
 
+    <!-- Credits -->
+    <div class="slide">
+        <p
+            style="position: absolute; top: 75%; transform: translateY(-50%); text-align: center; width: 100%; font-size: 1.1rem; opacity: 0.8; line-height: 1.6;">
+            This project has been created by <a href="https://www.linkedin.com/in/aureliomerenda/" target="_blank"
+                style="color: var(--accent-cyan); text-decoration: none; border-bottom: 1px solid rgba(5, 217, 232, 0.3); transition: all 0.3s;">Aurelio
+                Merenda</a>
+            with the help of <a href="https://gemini.google.com/app" target="_blank"
+                style="color: var(--accent-cyan); text-decoration: none; border-bottom: 1px solid rgba(5, 217, 232, 0.3); transition: all 0.3s;">Gemini
+                3.0</a>
+            and <a href="https://antigravity.google/" target="_blank"
+                style="color: var(--accent-cyan); text-decoration: none; border-bottom: 1px solid rgba(5, 217, 232, 0.3); transition: all 0.3s;">Antigravity</a><br>
+            and its source code is available on <a href="https://github.com/aureliome/cinema-ratings" target="_blank"
+                style="color: var(--accent-cyan); text-decoration: none; border-bottom: 1px solid rgba(5, 217, 232, 0.3); transition: all 0.3s;">GitHub</a>.
+        </p>
+    </div>
+
+</body>
+
+<script>
+    const decadesData = [{"avg_rating": 8.5, "count": 2, "decade": "1930s"}, {"avg_rating": 7.0, "count": 10, "decade": "1940s"}, {"avg_rating": 7.1, "count": 20, "decade": "1950s"}, {"avg_rating": 6.548387096774194, "count": 31, "decade": "1960s"}, {"avg_rating": 6.916666666666667, "count": 48, "decade": "1970s"}, {"avg_rating": 6.862745098039215, "count": 51, "decade": "1980s"}, {"avg_rating": 6.385321100917431, "count": 109, "decade": "1990s"}, {"avg_rating": 6.338028169014085, "count": 142, "decade": "2000s"}, {"avg_rating": 6.101694915254237, "count": 236, "decade": "2010s"}, {"avg_rating": 6.131782945736434, "count": 129, "decade": "2020s"}];
+    const votesData = [{"imdb_count": 0, "my_count": 0, "vote": 1}, {"imdb_count": 0, "my_count": 0, "vote": 2}, {"imdb_count": 0, "my_count": 7, "vote": 3}, {"imdb_count": 0, "my_count": 29, "vote": 4}, {"imdb_count": 21, "my_count": 119, "vote": 5}, {"imdb_count": 194, "my_count": 278, "vote": 6}, {"imdb_count": 444, "my_count": 240, "vote": 7}, {"imdb_count": 115, "my_count": 85, "vote": 8}, {"imdb_count": 4, "my_count": 19, "vote": 9}, {"imdb_count": 0, "my_count": 1, "vote": 10}];
+
+    // Global defaults
+    Chart.defaults.font.family = "'Outfit', sans-serif";
+    Chart.defaults.color = '#ffffff';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
+
+    // Years Chart
+    const ctxYears = document.getElementById('yearsChart').getContext('2d');
+
+    // Create gradient for years
+    const gradientYears = ctxYears.createLinearGradient(0, 0, 0, 400);
+    gradientYears.addColorStop(0, '#05d9e8');
+    gradientYears.addColorStop(1, 'rgba(5, 217, 232, 0.2)');
+
+    new Chart(ctxYears, {
+        type: 'bar',
+        data: {
+            labels: decadesData.map(d => d.decade),
+            datasets: [
+                {
+                    label: 'Count of Movies Watched',
+                    data: decadesData.map(d => d.count),
+                    backgroundColor: gradientYears,
+                    hoverBackgroundColor: '#05d9e8',
+                    borderRadius: 5,
+                    yAxisID: 'y',
+                    order: 2
+                },
+                {
+                    label: 'Avg Rating',
+                    data: decadesData.map(d => d.avg_rating),
+                    type: 'line',
+                    borderColor: '#ff2a6d',
+                    backgroundColor: 'rgba(255, 42, 109, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    pointBackgroundColor: '#ff2a6d',
+                    yAxisID: 'y1',
+                    order: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: { display: true, text: 'Count of Movies Watched', color: '#ffffff' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: { display: true, text: 'Avg Rating', color: '#ffffff' },
+                    grid: { drawOnChartArea: false },
+                    min: 5,
+                    max: 10
+                },
+                x: {
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#ffffff' } },
+                tooltip: {
+                    backgroundColor: 'rgba(20, 20, 40, 0.9)',
+                    titleColor: '#05d9e8',
+                    bodyColor: '#fff',
+                    borderColor: '#05d9e8',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function (context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                if (context.datasetIndex === 1) { // Rating
+                                    label += context.parsed.y.toFixed(1);
+                                } else {
+                                    label += context.parsed.y;
+                                }
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Votes Chart
+    const ctxVotes = document.getElementById('votesChart').getContext('2d');
+
+    // Gradients for votes
+    const gradientMyVotes = ctxVotes.createLinearGradient(0, 0, 0, 400);
+    gradientMyVotes.addColorStop(0, '#05d9e8'); // Cyan
+    gradientMyVotes.addColorStop(1, 'rgba(5, 217, 232, 0.2)');
+
+    const gradientImdbVotes = ctxVotes.createLinearGradient(0, 0, 0, 400);
+    gradientImdbVotes.addColorStop(0, '#d93ef8'); // Purple
+    gradientImdbVotes.addColorStop(1, 'rgba(217, 62, 248, 0.2)');
+
+    new Chart(ctxVotes, {
+        type: 'bar',
+        data: {
+            labels: votesData.map(d => d.vote),
+            datasets: [
+                {
+                    label: 'Count of movies I rated with this vote',
+                    data: votesData.map(d => d.my_count),
+                    backgroundColor: gradientMyVotes,
+                    hoverBackgroundColor: '#05d9e8',
+                    borderRadius: 4,
+                },
+                {
+                    label: 'Count of movies rated on IMDb with this vote',
+                    data: votesData.map(d => d.imdb_count),
+                    backgroundColor: gradientImdbVotes,
+                    hoverBackgroundColor: '#e056fd',
+                    borderRadius: 4,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#ffffff' } },
+                tooltip: {
+                    backgroundColor: 'rgba(20, 20, 40, 0.9)',
+                    titleColor: '#05d9e8',
+                    bodyColor: '#fff',
+                    borderColor: '#05d9e8',
+                    borderWidth: 1
+                }
+            }
+        }
+    });
+</script>
 </body>
 
 </html>

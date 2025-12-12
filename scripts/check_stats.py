@@ -12,7 +12,8 @@ def validate_item_list(items, context):
     
     valid = True
     required_keys = ['name', 'count', 'approval_rate', 'avg_rating', 'movies']
-
+    # decades_data has slightly different keys (decade instead of name) so we handle it separately
+    
     for i, item in enumerate(items):
         if not isinstance(item, dict):
             print(f"Error: Item {i} in '{context}' is not a dictionary.")
@@ -53,7 +54,7 @@ def validate_stats():
         print("Error: Root of stats.json must be a dictionary.")
         sys.exit(1)
         
-    required_root_keys = ['total_days_watched', 'avg_runtime_liked_minutes', 'favorites', 'least_favorites', 'most_watched_genres']
+    required_root_keys = ['total_days_watched', 'avg_runtime_minutes', 'favorites', 'least_favorites', 'most_watched_genres']
     
     valid = True
     for key in required_root_keys:
@@ -98,9 +99,33 @@ def validate_stats():
                   
     # Validate most_watched_genres
     most_watched = data.get('most_watched_genres')
-    # Again, checked existence earlier.
     if not validate_item_list(most_watched, "most_watched_genres"):
         valid = False
+
+    # Validate decades_data
+    decades_data = data.get('decades_data')
+    if decades_data is None:
+        print("Error: 'decades_data' is missing (was 'years_data').")
+        valid = False
+    elif not isinstance(decades_data, list):
+        print(f"Error: 'decades_data' must be a list, got {type(decades_data).__name__}.")
+        valid = False
+    else:
+        # Custom validation for decades list as it has different keys than 'validate_item_list' expects
+        for i, item in enumerate(decades_data):
+            if not isinstance(item, dict):
+                print(f"Error: Item {i} in 'decades_data' is not a dictionary.")
+                valid = False
+                continue
+            if 'decade' not in item:
+                 print(f"Error: Item {i} in 'decades_data' is missing key 'decade'.")
+                 valid = False
+            if 'count' not in item:
+                 print(f"Error: Item {i} in 'decades_data' is missing key 'count'.")
+                 valid = False
+            if 'avg_rating' not in item:
+                 print(f"Error: Item {i} in 'decades_data' is missing key 'avg_rating'.")
+                 valid = False
         
     if not valid:
         print("Validation failed with errors.")
