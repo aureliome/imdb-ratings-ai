@@ -1,6 +1,8 @@
-# IMDb Ratings Analysis with AI
+# IMDb Ratings AI
 
-This project allows you to analyze your IMDb ratings history, enrich them with extra information, generate statistics and present them in a presentation (HTML and PDF).
+Analyze your IMDb ratings history, enrich them with extra information, generate statistics and present them in a presentation (HTML and PDF).
+
+You can see the result in PDF format at [slides/index.pdf](slides/index.pdf) and in HTML format at http://aureliome.github.io/imdb-ratings-ai/.
 
 This project has been developed with the help of [Gemini 3.0](https://gemini.google.com/app) and [Antigravity](https://antigravity.ai/).
 

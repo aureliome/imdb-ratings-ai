@@ -7,7 +7,7 @@ def load_stats(stats_path):
     with open(stats_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-def generate_slides(stats_path, template_dir, template_file, output_path):
+def generate_slides(stats_path, template_dir, template_file, output_path, generate_pdf=True):
     stats = load_stats(stats_path)
     
     # Prepare data for template
@@ -57,23 +57,26 @@ def generate_slides(stats_path, template_dir, template_file, output_path):
         f.write(rendered_html)
         
     # Generate PDF
-    pdf_path = output_path.replace('.html', '.pdf')
-    print(f"Generating PDF at {pdf_path}...")
-    
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        # 1920x1080 to match our print styles
-        page = browser.new_page(viewport={'width': 1920, 'height': 1080})
+    if generate_pdf:
+        pdf_path = output_path.replace('.html', '.pdf')
+        print(f"Generating PDF at {pdf_path}...")
         
-        # Convert path to file URL
-        file_url = f"file://{output_path}"
-        page.goto(file_url, wait_until="networkidle")
-        
-        # Wait for Chart.js animations to complete
-        page.wait_for_timeout(2000)
-        
-        page.pdf(path=pdf_path, width="1920px", height="1080px", print_background=True)
-        browser.close()
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            # 1920x1080 to match our print styles
+            page = browser.new_page(viewport={'width': 1920, 'height': 1080})
+            
+            # Convert path to file URL
+            file_url = f"file://{output_path}"
+            page.goto(file_url, wait_until="networkidle")
+            
+            # Wait for Chart.js animations to complete
+            page.wait_for_timeout(2000)
+            
+            page.pdf(path=pdf_path, width="1920px", height="1080px", print_background=True)
+            browser.close()
+    else:
+        print("Skipping PDF generation as requested.")
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -82,5 +85,8 @@ if __name__ == "__main__":
     template_name = 'template.html'
     output_file = os.path.join(slides_dir, 'index.html')
     
-    generate_slides(stats_file, slides_dir, template_name, output_file)
+    # Check for SKIP_PDF env var
+    skip_pdf = os.environ.get('SKIP_PDF', '').lower() == 'true'
+    
+    generate_slides(stats_file, slides_dir, template_name, output_file, generate_pdf=not skip_pdf)
     print(f"Slides generated at {output_file}")
