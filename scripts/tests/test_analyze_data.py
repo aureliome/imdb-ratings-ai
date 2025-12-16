@@ -12,9 +12,9 @@ class TestAnalyzeData(unittest.TestCase):
 
     def test_process_category(self):
         movies = [
-            {'Title': 'A', 'Your Rating': 8.0},
-            {'Title': 'B', 'Your Rating': 6.0},
-            {'Title': 'C', 'Your Rating': 9.0}
+            {'Title': 'A', 'Original Title': 'A', 'Your Rating': 8.0},
+            {'Title': 'B', 'Original Title': 'B', 'Your Rating': 6.0},
+            {'Title': 'C', 'Original Title': 'C', 'Your Rating': 9.0}
         ]
         # Dummy extractor maps all to 'TestGenre'
         def extractor(m): return ['TestGenre']

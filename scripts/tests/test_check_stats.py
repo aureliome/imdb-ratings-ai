@@ -41,10 +41,11 @@ class TestCheckStats(unittest.TestCase):
         mock_file.exists.return_value = True
         data = {
             "total_days_watched": 10,
-            # "avg_runtime_liked_minutes" key is missing
+            # "avg_runtime_minutes" key is missing
             "favorites": {}, 
             "least_favorites": {}, 
-            "most_watched_genres": []
+            "most_watched_genres": [],
+            "decades_data": []
         }
         
         with patch('builtins.open', mock_open(read_data=json.dumps(data))):
@@ -59,14 +60,15 @@ class TestCheckStats(unittest.TestCase):
         mock_file.exists.return_value = True
         data = {
             "total_days_watched": 10,
-            "avg_runtime_liked_minutes": 100,
+            "avg_runtime_minutes": 100,
             "favorites": {
                 "genres": [{"name": "G1"}], # Missing other required keys like count, approval_rate etc.
                 "directors": [],
                 "actors": [] 
             }, 
             "least_favorites": {"genres": []}, 
-            "most_watched_genres": []
+            "most_watched_genres": [],
+            "decades_data": []
         }
         
         with patch('builtins.open', mock_open(read_data=json.dumps(data))):
@@ -90,14 +92,15 @@ class TestCheckStats(unittest.TestCase):
         
         data = {
             "total_days_watched": 10,
-            "avg_runtime_liked_minutes": 100,
+            "avg_runtime_minutes": 100,
             "favorites": {
                 "genres": [valid_item],
                 "directors": [],
                 "actors": [] 
             }, 
             "least_favorites": {"genres": []}, 
-            "most_watched_genres": [valid_item]
+            "most_watched_genres": [valid_item],
+            "decades_data": []
         }
         
         with patch('builtins.open', mock_open(read_data=json.dumps(data))):
